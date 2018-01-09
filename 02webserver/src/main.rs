@@ -1,4 +1,5 @@
 //
+//
 // 1.  `extern crate` directives make crates that we cited in our Cargo.toml available.
 // 2.  #[macro_use] attribute alert we plan to use macros exported by the crate.
 extern crate iron;
@@ -9,12 +10,13 @@ use iron::prelude::*;
 use iron::status;
 
 fn main() {
-    add_router();
 
     println!("Serving on http://localhost:3000...");
     // 4. pass the get_form function to Iron::new, indicating that the server should use that
     //    function to handle all requests
-    Iron::new(get_form).http("localhost:3000").unwrap();
+    //Iron::new(get_form).http("localhost:3000").unwrap();
+
+    build_router();
     
 }
 
@@ -51,14 +53,22 @@ fn get_form(_request: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+//10.  Rust allows declarations to occur in any order
+//10.1 Macro definitions and extern crate items with #[macro_use] attributes are exceptions to this
+//     rule: they must appear before they are used.
 extern crate router;
 use router::Router;
 
-fn add_router() {
+fn build_router() {
+
+    //11. create a Router, establish handler functions for two specific paths
     let mut router = Router::new();
     router.get("/", get_form, "root");
     router.post("/gcd", post_gcd, "gcd");
 
+    //12. pass this Router as the request handler to Iron::new
+    //    consults the URL path to decide which handler function to call
+    Iron::new(router).http("localhost:3000").unwrap();
 }
 
 extern crate urlencoded;
@@ -68,8 +78,18 @@ use urlencoded::UrlEncodedBody;
 
 
 fn post_gcd(request: &mut Request) -> IronResult<Response> {
+
 	let mut response = Response::new();
 
+    //13.  check `match` expression of a Result type 
+    //13.1 if Err(e), it runs the branch with error set to e 
+    //13.2 if Ok(v),  it runs the branch with success set to v, aka map -> form_data
+    //14.  the program can only access the value of a Result by first checking which variant it is;
+    //     one can never misinterpret a failure value as a successful completio
+    //15.  ::<UrlEncodedBody> part of the method call is a type parameter indicating which part of
+    //     the Request get_ref should retrieve.
+    //16.  The format! macro uses the same kind of string template as the writeln! and println!
+    //     macros, but returns a string value
 	let form_data = match request.get_ref::<UrlEncodedBody>() {
 		Err(e) => {
 			response.set_mut(status::BadRequest);
@@ -149,6 +169,3 @@ fn test_gcd() {
     assert_eq!(gcd(14, 15), 1);
     assert_eq!(gcd(2 * 3 * 5 * 11 * 17, 3 * 7 * 11 * 13 * 19), 3 * 11);
 }
-
-
-
