@@ -205,12 +205,12 @@ use std::io::Write;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
-    if args.len() != 5 {
+    if args.len() != 6 {
         writeln!(std::io::stderr(),
         "Usage: mandelbrot FILE PIXELS UPPERLEFT LOWERRIGHT")
             .unwrap();
         writeln!(std::io::stderr(),
-        "Example: {} mandel.png 1000x750 -1.20,0.35 -1,0.20",
+        "Example: {} mandel.png 1000x750 -1.20,0.35 -1,0.20 fast",
         args[0])
             .unwrap();
         std::process::exit(1);
@@ -226,13 +226,53 @@ fn main() {
     // 15.  A macro call vec![v; n] creates a vector n elements long 
     //      whose elements are initialized to v
     let mut pixels = vec![0; bounds.0 * bounds.1];
-
+    
+    let mut concurrent = true;
+    match &args[5][..] {
+        "fast" => concurrent = true,
+        "slow" => concurrent = false,
+             _ => concurrent = true
+    }
     // 16. The &mut pixels borrows a mutable reference to our pixel buffer, allowing
     //     render to fill it with computed grayscale values.
-    render(&mut pixels, bounds, upper_left, lower_right);
+    //do_render(false, &mut pixels, bounds, upper_left, lower_right);
+    if !concurrent {
+        render(&mut pixels, bounds, upper_left, lower_right);
+    }
+    else{
+        render_c(&mut pixels, bounds, upper_left, lower_right);
+    }
 
     // 17. In this case, we pass a shared (nonmutable) reference &pixels , since 
     //     write_image should have no need to modify the buffer’s contents.
     write_image(&args[1], &pixels, bounds)
         .expect("error writing PNG file");
 }
+
+extern crate crossbeam;
+fn render_c(pixels: &mut [u8],
+            bounds: (usize, usize),
+            upper_left: Complex<f64>,
+            lower_right: Complex<f64>){
+    let threads = 8;
+    let rows_per_band = bounds.1 / threads + 1;
+    {
+        let bands: Vec<&mut [u8]> = pixels.chunks_mut(rows_per_band * bounds.0).collect();
+        crossbeam::scope(|spawner| {
+            for (i, band) in bands.into_iter().enumerate() {
+                let top = rows_per_band * i;
+                let height = band.len() / bounds.0;
+                let band_bounds = (bounds.0, height);
+                let band_upper_left =
+                    pixel_to_point(bounds, (0, top), upper_left, lower_right);
+                let band_lower_right =
+                    pixel_to_point(bounds, (bounds.0, top + height),
+                    upper_left, lower_right);
+
+                spawner.spawn(move || {
+                    render(band, band_bounds, band_upper_left, band_lower_right);
+                });
+            }
+        });
+    }
+} 
