@@ -1,0 +1,12 @@
+[package]
+name = "iron-gcd"
+version = "0.1.0"
+authors = ["Alex Wu <dindinw@users.noreply.github.com>"]
+
+# 1.  the [dependencies] section of Cargo.toml gives the name of a crate on crates.io
+#     and the version of that crate 
+[dependencies]
+iron = "0.5.1"
+mime = "0.2.3"
+router = "0.5.1"
+urlencoded = "0.5.0"
