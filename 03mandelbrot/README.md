@@ -11,3 +11,4 @@ real    0m11.701s
 user    0m11.625s
 sys     0m0.056s
 ```
+<img width="800" height="600" src=./mandel.png></img>
