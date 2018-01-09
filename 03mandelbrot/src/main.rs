@@ -178,6 +178,8 @@ use std::fs::File;
 // 12.  write_image function has no useful value to return, So its success type is
 //      the unit type (), so called because it has only one value. 
 // 12.1 The unit type is akin to void in C and C++.
+// 13.  we can use Result<()> shorthand for Result<T, std::io::Error>, if we bring it
+//      into scope with a use std::io::Result declaration
 fn write_image(filename: &str, pixels: &[u8], bounds: (usize, usize))
 	-> Result<(), std::io::Error>
 {
@@ -198,6 +200,39 @@ fn write_image(filename: &str, pixels: &[u8], bounds: (usize, usize))
 	Ok(())
 }
 
+use std::io::Write;
+
 fn main() {
-	println!("Hello, world!");
+    let args: Vec<String> = std::env::args().collect();
+
+    if args.len() != 5 {
+        writeln!(std::io::stderr(),
+        "Usage: mandelbrot FILE PIXELS UPPERLEFT LOWERRIGHT")
+            .unwrap();
+        writeln!(std::io::stderr(),
+        "Example: {} mandel.png 1000x750 -1.20,0.35 -1,0.20",
+        args[0])
+            .unwrap();
+        std::process::exit(1);
+    }
+
+    let bounds = parse_pair(&args[2], 'x')
+        .expect("error parsing image dimensions");
+    let upper_left = parse_complex(&args[3])
+        .expect("error parsing upper left corner point");
+    let lower_right = parse_complex(&args[4])
+        .expect("error parsing lower right corner point");
+
+    // 15.  A macro call vec![v; n] creates a vector n elements long 
+    //      whose elements are initialized to v
+    let mut pixels = vec![0; bounds.0 * bounds.1];
+
+    // 16. The &mut pixels borrows a mutable reference to our pixel buffer, allowing
+    //     render to fill it with computed grayscale values.
+    render(&mut pixels, bounds, upper_left, lower_right);
+
+    // 17. In this case, we pass a shared (nonmutable) reference &pixels , since 
+    //     write_image should have no need to modify the buffer’s contents.
+    write_image(&args[1], &pixels, bounds)
+        .expect("error writing PNG file");
 }
