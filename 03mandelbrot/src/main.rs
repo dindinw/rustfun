@@ -246,23 +246,41 @@ fn render_c(pixels: &mut [u8],
             lower_right: Complex<f64>){
     let threads = 8;
     let rows_per_band = bounds.1 / threads + 1;
-    {
-        let bands: Vec<&mut [u8]> = pixels.chunks_mut(rows_per_band * bounds.0).collect();
-        crossbeam::scope(|spawner| {
-            for (i, band) in bands.into_iter().enumerate() {
-                let top = rows_per_band * i;
-                let height = band.len() / bounds.0;
-                let band_bounds = (bounds.0, height);
-                let band_upper_left =
-                    pixel_to_point(bounds, (0, top), upper_left, lower_right);
-                let band_lower_right =
-                    pixel_to_point(bounds, (bounds.0, top + height),
-                    upper_left, lower_right);
+    // 18.  buffer’s chunks_mut() method returns an iterator producing mutable, 
+    //      nonoverlapping slices of the buffer
+    // 19.  the iterator’s collect() method builds a vector holding these mutable,
+    //      nonoverlapping slices
+    let bands: Vec<&mut [u8]> = pixels.chunks_mut(rows_per_band * bounds.0).collect();
+    // 20.  The argument |spawner| { ... } is a Rust closure expression. 
+    //      |spawner| is the argument list, and { ... } is the body of the function. 
+    //      unlike functions declared with fn, we don’t need to declare the types of a
+    //      closure’s arguments
+    // 21.  crossbeam::scope calls the closure, passing as the spawner argument a value the
+    //      closure can use to create new threads
+    // 21.1 crossbeam::scope waits for all such threads to finish execution before 
+    //      returning itself. when crossbeam::scope returns, the computation of the 
+    //      image is complete.
+    crossbeam::scope(|spawner| {
+        // 22.  The into_iter() iterator gives each iteration of the loop body exclusive
+        //      ownership of one band, ensuring that only one thread can write to it at a time. 
+        // 22.1 the enumerate adapter produces tuples pairing each vector element with its index.
+        for (i, band) in bands.into_iter().enumerate() {
+            let top = rows_per_band * i;
+            let height = band.len() / bounds.0;
+            let band_bounds = (bounds.0, height);
+            let band_upper_left =
+                pixel_to_point(bounds, (0, top), upper_left, lower_right);
+            let band_lower_right =
+                pixel_to_point(bounds, (bounds.0, top + height), upper_left, lower_right);
 
-                spawner.spawn(move || {
-                    render(band, band_bounds, band_upper_left, band_lower_right);
-                });
-            }
-        });
-    }
+            // 23.   create a thread, running the closure move || { ... }.
+            //       a closure of no arguments whose body is the { ... } form.
+            // 24.   move keyword indicates that this closure takes ownership of the 
+            //       variables it uses. 
+            // 24.1  in particular, only the closure may use the mutable slice band.
+            spawner.spawn(move || {
+                render(band, band_bounds, band_upper_left, band_lower_right);
+            });
+        }
+    });
 } 
