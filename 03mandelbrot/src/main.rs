@@ -207,7 +207,7 @@ fn main() {
 
     if args.len() != 6 {
         writeln!(std::io::stderr(),
-        "Usage: mandelbrot FILE PIXELS UPPERLEFT LOWERRIGHT")
+        "Usage: mandelbrot FILE PIXELS UPPERLEFT LOWERRIGHT CONCURRENT")
             .unwrap();
         writeln!(std::io::stderr(),
         "Example: {} mandel.png 1000x750 -1.20,0.35 -1,0.20 fast",
@@ -227,23 +227,13 @@ fn main() {
     //      whose elements are initialized to v
     let mut pixels = vec![0; bounds.0 * bounds.1];
     
-    let mut concurrent = true;
-    match &args[5][..] {
-        "fast" => concurrent = true,
-        "slow" => concurrent = false,
-             _ => concurrent = true
-    }
     // 16. The &mut pixels borrows a mutable reference to our pixel buffer, allowing
     //     render to fill it with computed grayscale values.
-    //do_render(false, &mut pixels, bounds, upper_left, lower_right);
-    if !concurrent {
-        render(&mut pixels, bounds, upper_left, lower_right);
+    match &args[5][..] {
+        "fast" => render_c(&mut pixels, bounds, upper_left, lower_right),
+             _ => render(&mut pixels, bounds, upper_left, lower_right)
     }
-    else{
-        render_c(&mut pixels, bounds, upper_left, lower_right);
-    }
-
-    // 17. In this case, we pass a shared (nonmutable) reference &pixels , since 
+        // 17. In this case, we pass a shared (nonmutable) reference &pixels , since 
     //     write_image should have no need to modify the buffer’s contents.
     write_image(&args[1], &pixels, bounds)
         .expect("error writing PNG file");
