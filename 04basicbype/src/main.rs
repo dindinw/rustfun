@@ -50,42 +50,26 @@ fn main() {
     assert_eq!( big_val,   2147483647);
     assert_eq!(       x,  -2147483648);
 
-    // 7. The prefixes 0x, 0o, and 0b designate hexadecimal, octal, and binary literals.
+    // 7.  The prefixes 0x, 0o, and 0b designate hexadecimal, octal, and binary literals.
     assert_eq!(   0xcafeu32,  51966);
     assert_eq!(       0o106,     70);
     assert_eq!( 0b0010_1010,     42);
 
-    // 8. big number  
+    // 8.  big number  
     assert_eq!( 20_922_789_888_000u64, 20922789888000);
 
-    // 9. u8 byte literal
+    // 9.  u8 byte literal
     assert_eq!(b'a', 97);
     assert_eq!(b'A', 65);
     assert_eq!(b'*', 42u8);
 
-    // 10. isize, usize, the same size as an address on the machine
+    // 10.  isize, usize, the same size as an address on the machine
     assert_eq!(137isize,  137);
     assert_eq!(137usize,  137);
     assert_eq!(-0b0101_0010isize, -82);
     assert_eq!( 0xffff_fc00usize, 4_294_966_272);
 
-    // 11. floating-point numbers
-    assert_eq!(1.61803f32, 1.61803);
-    assert_eq!(6.0221e23f64, 6.0221e23);
-
-    // 12. Unicode character
-    assert_eq!('ಠ','\u{CA0}');
-    assert_eq!('A','\x41');
-    assert_eq!('字', '\u{5B57}');
-
-    // 13. Tuple, mixed types allowed
-    assert_eq!(('a',b'A',0x61),('\x61',65,97));
-
-    // 14.  unit (empty) tuple 
-    assert_eq!((),());
-    assert_eq!((1),(1));
-
-    // 15.  limitations
+    // 11.  limitations
     assert_eq!(    std::i8::MAX,                  127);
     assert_eq!(    std::i8::MIN,                 -128);
     assert_eq!(   std::i16::MAX,                32767);
@@ -109,7 +93,7 @@ fn main() {
     assert_eq!( std::usize::MIN,                    0);
 
     
-    // 16.  Characters require a backslash 
+    // 12.  Characters require a backslash 
     assert_eq!(b'\'', 39   ); // Single quote, '
     assert_eq!(b'\'', 0x27 ); 
     assert_eq!(b'\\', 92   ); // Backslash, \
@@ -122,25 +106,27 @@ fn main() {
     assert_eq!(b'\t', 0x09 ); 
 
 
-    // 17.  Type Casts
+    // 13.  Type Casts
     assert_eq!(   10_i8  as u16,    10_u16); // in range
     assert_eq!( 2525_u16 as i16,  2525_i16); // in range
 
     assert_eq!(   -1_i16 as i32,    -1_i32); // sign-extended
     assert_eq!(65535_u16 as i32, 65535_i32); // zero-extended
     
-    // 17.1 truncation when type casting
-    // Conversions that are out of range for the destination
-    // produce values that are equivalent to the original modulo 2^N,
-    // where N is the width of the destination in bits. This
-    // is sometimes called "truncation".
+    // 13.1 truncation when type casting
+    //      Conversions that are out of range for the destination
+    //      produce values that are equivalent to the original modulo 2^N,
+    //      where N is the width of the destination in bits. This
+    //      is sometimes called "truncation".
+    // 13.2 the act of writing out numeric conversions in Rust has 
+    //      alerted us to problems we would otherwise have missed. 
     assert_eq!( 1000_i16 as  u8,   232_u8);
     assert_eq!(65535_u32 as i16,    -1_i16);
 
     assert_eq!(   -1_i8  as u8,    255_u8);
     assert_eq!(  255_u8  as i8,     -1_i8);
 
-    // 18.  The standard library provides some basic operations 
+    // 14.  The standard library provides some basic operations 
     //      for the basic types 
     assert_eq!(2u16.pow(4), 16);            // exponentiation
     assert_eq!((-4i32).abs(), 4);           // absolute value
@@ -157,4 +143,97 @@ fn main() {
     assert_eq!(0xff,0b1111_1111);
     assert_eq!(0x7f,0b0111_1111);
 
+    // 15.  Foating-Point Type
+    //      Rust provides IEEE single/double-precision floating-point types. 
+    //      Following the IEEE 754-2008 specification
+    // 15.1 IEEE single precision (at least 6 decimal digits)
+    // 15.2 IEEE double precision (at least 15 decimal digits)
+    // 15.3 If a floating-point literal lacks a type suffix, Rust infers whether
+    //      it is an f32 or f64 from the context, defaulting to f64. 
+
+    assert_eq!(1.61803f32, 1.61803);
+    assert_eq!(6.0221e23f64, 6.0221e23);
+
+    assert_eq!(5f32.sqrt() * 5f32.sqrt(), 5.); // exactly 5.0, per IEEE
+    assert_eq!(-1.01f64.floor(), -1.0);
+    assert!((-1. / std::f32::INFINITY).is_sign_negative());
+
+    // The standard library’s std::f32 and std::f64 modules define constants for 
+    // the IEEE-required special values like INFINITY, 
+    // NEG_INFINITY (negative infinity), NAN (the not-a-number value), 
+    // and MIN and MAX (the largest and smallest finite values).
+    assert_eq!(std::f32::MIN, -3.4028235_e38_f32);
+    assert_eq!(std::f32::MAX,  3.4028235_e38_f32);
+    assert_eq!(1./std::f32::INFINITY, 0.);
+    assert_eq!(1./std::f32::NEG_INFINITY, -0.);
+    assert_eq!((2.0_f32).sqrt(),1.4142135);
+    assert_eq!(f64::sqrt(2.0),1.4142135623730951);
+   
+    // 16.  bool
+    // 16.1 as operator can convert bool values to integer types  
+    // 16.2 However, as won’t convert in the other direction, from numeric types to bool.
+    assert_eq!(false as i32, 0);
+    assert_eq!(true  as i32, 1);
+    assert_eq!(false as u8, 0);
+    assert_eq!(true  as u8, 1);
+
+    // 17.  Unicode character
+    assert_eq!('ಠ','\u{CA0}');
+    assert_eq!('A','\x41');
+    assert_eq!('字', '\u{5B57}');
+    assert_eq!('*' as i32, 42);
+    assert_eq!('ಠ' as u16, 0xca0);
+    assert_eq!('ಠ' as i8, -0x60); 
+    
+    // 17.1 The standard library provides some useful methods on characters
+    //      from the module “std::char”.
+    assert_eq!('*'.is_alphabetic(), false);
+    assert_eq!('Β'.is_alphabetic(), true);
+    assert_eq!('8'.to_digit(10), Some(8));
+    assert_eq!('ಠ'.len_utf8(), 3);
+    assert_eq!(std::char::from_digit(2, 10), Some('2'));
+
+    // 18.  A tuple is a pair, or triple, or quadruple, ... of values of assorted types.
+    // 18.1 Tuples aren’t much like arrays: for one thing, each element of a tuple can have a
+    //      different type,
+    assert_eq!(('a',b'A',0x61),('\x61',65,97)); //mixed types allowed
+
+    // 18.2 Rust code often uses tuple types to return multiple values from a function
+    //      the split_at method on string slices, which divides a string into two halves and
+    //      returns them both
+    let text = "I see the eigenvalue in thine eye";
+    let (head, tail) = text.split_at(21);
+    assert_eq!(head, "I see the eigenvalue ");
+    assert_eq!(tail, "in thine eye");
+
+    // 18.3 Given a tuple value t, you can access its elements as t.0, t.1, and so on. 
+    //      tuples allow only constants as indices, like t.4. You can’t write t.i or t[i] 
+    //      to get the i’th element.  
+    let line = "good or evil";
+    let temp = line.split_at(5);
+    let begin = temp.0;
+    let end = temp.1;
+    assert_eq!(begin, "good ");
+    assert_eq!(end, "or evil");
+
+    // 18.4 tuples used as a sort of minimal-drama struct type. We could declare a struct 
+    //      but that’s pretty heavy notation for something so obvious, so we just used a
+    //      tuple
+    // 18.5 unit (empty) tuple 
+    //      The other commonly used tuple type, is the zero-tuple (). This is traditionally 
+    //      called the unit type because it has only one value, also written (). Rust uses 
+    //      the unit type where there’s no meaningful value to carry, but context requires
+    //      some sort of type nonetheless.
+    assert_eq!((),());
+    
+    // 18.6 you may include a comma after a tuple’s last element: the types (&str, i32,) and
+    //      (&str, i32) are equivalent)
+    assert_eq!(("Brazil", 1985,),("Brazil",1985));
+    // here is a tuple containing a single string; its type is (&str,)
+    // missing the comma caused a mismatched type &str 
+    // assert_eq!(("lonely hearts",),("lonely hearts")); //mismatched types
+    assert_eq!(("lonely hearts",),("lonely hearts",)); 
+
+
+        
 }
