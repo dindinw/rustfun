@@ -1,3 +1,5 @@
+extern crate regex;
+use regex::Regex;
 //
 // Rust is a statically typed language: without actually running the program, the compiler checks
 // that every possible path of execution will use values only in ways consistent with their types.
@@ -296,7 +298,8 @@ fn main() {
        println!("\n {} primes exist in the range of 2..10000",count);
        */
 
-    // 22.2 Rust implicitly converts a reference to an array to a slice when searching
+    // 22.2 use slice method on an array directly
+    //      Rust implicitly converts a reference to an array to a slice when searching
     //      for methods, so you can call any slice method on an array directly. the
     //      sort method is actually defined on slices, but since sort takes its operand
     //      by reference, we can use it directly on chaos: the call implicitly produces
@@ -307,11 +310,279 @@ fn main() {
 
     // 23.  A vector Vec<T> is a resizable array of elements of type T, allocated on the
     //      heap.
-    // 23.1 There are several ways to create vectors. The simplest is to use the vec! macro
+    // 23.1 create vectors. the simplest is to use the vec! macro
     let mut v = vec![2, 3, 5, 7];
     assert_eq!(v.iter().fold(1, |a, b| a * b), 210);
     v.push(11);
     v.push(13);
-    assert_eq!(v.iter().fold(1, |a, b| a * b), 30030);
+    // |argument| { ... } is a Rust closure expression, the { } can ommit if closure
+    // is one-liner
+    assert_eq!(v.iter().fold(1, |a, b| a * b ), 30030);
+    assert_eq!(v.iter().fold(1, |a, b|{a * b}), 30030);
+    // 2*((2*(1+2)-1)+3)-1 = 15
+    assert_eq!([2,3].iter().fold(1, |a, b|{let i = a + b; 2*i-1}), 15);
+    // build a vector by repeating a given value a certain number of times
+    assert_eq!(new_pixel_buffer(2,3),vec![0,0,0,0,0,0]);
+
+    // 23.2 Vec::new is equivalent to calling vec! macro
+    let mut v = Vec::new();
+    v.push("step");
+    v.push("on");
+    v.push("no");
+    v.push("pets");
+    assert_eq!(v, vec!["step", "on", "no", "pets"]);
+
+    // 23.3 build a vector from the values produced by an iterator
+    let v: Vec<i32>  = (0..5).collect();
+    // need to supply the type when using collect
+    // let v = (0..5).collect();  -> cannot infer type
+    assert_eq!(v, [0, 1, 2, 3, 4]);
+
+
+    // 23.4 use slice methods on vectors
+    let mut word = vec!["good","bad","ugly"];
+    // the reverse() method is actually defined on slices, but the call implicitly borrows
+    // a &mut [&str] slice from the vector, and invokes reverse()
+    word.reverse();
+    assert_eq!(word, ["ugly","bad", "good"]);
+    word.sort();
+    assert_eq!(word, ["bad","good", "ugly"]);
+
+    // 23.4 Vector internal
+    // A Vec<T> consists of three values:
+    // - a pointer to the heap-allocated buffer allocated to hold the elements (pointer)
+    // - the number of elements that buffer has the capacity to store (capacity)
+    // - the number it actually contains now (its length)
+    // When the buffer has reached its capacity, adding another element to the vector entails
+    // allocating a larger buffer, copying the present contents into it, updating the vector’s
+    // pointer and capacity to describe the new buffer, and finally freeing the old one.
+
+    // you can call Vec::with_capacity to create a vector with a buffer large
+    // enough to hold them all, right from the start
+    let mut v = Vec::with_capacity(2);
+    assert_eq!(v.len(), 0);
+    assert_eq!(v.capacity(), 2);
+
+    v.push(1);
+    v.push(2);
+    assert_eq!(v.len(), 2);
+    assert_eq!(v.capacity(), 2);
+
+    v.push(3);
+    assert_eq!(v.len(), 3);
+    assert_eq!(v.capacity(), 4);
+
+    // 23.5 insert & remove
+    let mut v = vec![10, 20, 30, 40, 50];
+    // Make the element at index 3 be 35.
+    v.insert(3, 35);
+    assert_eq!(v, [10, 20, 30, 35, 40, 50]);
+    // Remove the element at index 1.
+    v.remove(1);
+    assert_eq!(v, [10, 30, 35, 40, 50]);
+
+    let mut v = vec!["one", "two",];
+    assert_eq!(v.pop(), Some("two"));
+    v.push("three");
+    assert_eq!(v.pop(), Some("three")); //LIFO
+    assert_eq!(v.pop(), Some("one"));
+    assert_eq!(v.pop(), None);
+
+    let mut v = vec!["one", "two",];
+    v.push("three");
+    let mut a:Vec<_> = v.iter().skip(1).collect();
+    assert_eq!(a,vec![&"two",&"three"]);
+    a.push(&"four");
+    assert_eq!(a,vec![&"two",&"three", &"four"]);
+
+    let b:Vec<String> = v.iter().map(|s|s.to_string()).skip(1).collect();
+    assert_eq!(b,["two","three"]);
+    assert_eq!(b,["two","three"]);
+
+    let mut v = Vec::new();
+    v.push(String::from("1"));
+    v.push(String::from("2"));
+    v.push(String::from("3"));
+    let a:Vec<_> = v.iter().skip(1).collect();
+    assert_eq!(a,["2","3"]);
+    let b:Vec<String> = v.iter().map(|s|s.to_string()).skip(1).collect();
+    assert_eq!(b,["2","3"]);
+
+    let s = ["one", "two", "three"];
+    let a:Vec<_> = s.iter().skip(1).collect();
+    let b:Vec<String> = s.iter().skip(1).map(|s|s.to_string()).collect();
+    assert_eq!(a,[&"two",&"three"]);
+    assert_eq!(b,["two","three"]);
+
+    let s = [String::from("1"),String::from("2")];
+    let a:Vec<_> = s.iter().collect();
+    let b:Vec<String> = s.iter().map(|s|s.to_string()).collect();
+    assert_eq!(a,["1","2"]);
+    assert_eq!(b,["1","2"]);
+
+
+    // 23.6  use a for loop to iterate over a vector
+    let v = ["input","1","2","3","4","5"];
+    let numbers: Vec<String> = v.iter().skip(1).map(|s|s.to_string()).collect();
+    for num_str in numbers {
+        let num = num_str.parse::<i32>().unwrap();
+        println!("{}: {}", num,
+                 if num % 2 == 0 {
+                     "even"
+                 } else {
+                     "odd"
+                 });
+    }
+
+    // 24.  Slices
+    // 24.1
+    // automatically converts the &Vec<f64> reference and the &[f64; 4] reference to slice
+    // references that point directly to the data.
+    //
+    //    v                     a                 sa       sv
+    // ------------------------------------------------------------
+    // |*|4|4|      |0.0|0.456|1.0|0.456|        |&|4|    |&|4|
+    // -|-------------|---------------------------|--------|-------  stack
+    //  |             |                           |        |
+    //  +-(1)-+       +---------(2)---------------+        |
+    //        | +-----------------------(3)----------------+
+    //        | |
+    // -------|-|--------------------------------------------------  heap
+    //       |0.0|0.123|1.0|0.123|
+    // ------------------------------------------------------------
+    //
+    // (1) Pointer to vector v in heap (owned by itself)
+    // (2) Reference to array a in stack (non-owning)
+    // (3) Reference to vector v in heap (non-owning)
+
+    let v: Vec<f64> = vec![0.0,  0.123,  1.0,  0.123];
+    let a: [f64; 4] =     [0.0,  0.456,  1.0,  0.456];
+    let sa: &[f64] = &a;
+    let sv: &[f64] = &v;
+    print(&sv);
+    print(&sa);
+
+    // 25.  String
+    // 25.1 String Literals
+    //      If one line of a string ends with a backslash, then the newline character and the
+    //      leading whitespace on the next line are dropped:
+    println!("On the 24th of February, 1815, the look-out at Notre-Dame de\
+        la Garde signalled the three-\
+        master, the Pharaon from Smyrna, Trieste, and Naples.");
+    // 25.2 raw strings need not warry about escape sequences
+    //  raw string using r
+    let default_mac_install_path = r"~/Library/Application Support/";
+    let pattern = Regex::new(r"\d+(\.\d+)*");
+    println!("{}",default_mac_install_path);
+    println!("{:?}",pattern);
+
+    //  raw string using ###
+    println!(r###"
+         This raw string started with 'r###"'.
+         Therefore it does not end until we reach a quote mark ('"')
+         followed immediately by three pound signs ('###'):
+    "###);
+
+    // 25.2 Byte Strings
+    let abc = b"ABC";
+    assert_eq!(abc, &[b'A', b'B', b'C']);
+
+    // 25.3 String, &str, and str
+    //
+    // alex:String  lex:&str(string slice)      wu:&str(string literal)
+    // ------------------------------------------------------------
+    // |*|4|4|       |*|3|                       |*|2|
+    // -|-------------|---------------------------|----------------  stack
+    //  |             |                          (3) 
+    //  +-(1)-+ +-(2)-+                 ----------|----------------  read-only memory
+    //        | |                                |W|U|
+    //        | |                       ---------------------------  preallocated
+    // -------|-|-------------  heap
+    //       |a|l|e|x|
+    // -----------------------
+    // 
+    // (1) String is a Vec<u8>
+    // (2) &str (“string slice”) is a reference to str owned by someone else
+    // (3) string literal is a &str that refers to preallocated text,
+
+    // A String has a resizable buffer holding UTF-8 text.
+    // The buffer is allocated on the heap, it can resize its buffer as needed or requested.
+    // You can think of a String as a Vec<u8>
+    let alex = "alex".to_string();
+    let lex = &alex[1..];
+    let wu = "WU";
+
+    assert_eq!(alex,"alex");
+    assert_eq!((lex,wu),("lex","WU",));
+
+    assert_eq!("WU".len(), 2);  //2 bytes UTF8
+    assert_eq!("WU".chars().count(), 2);
+
+    assert_eq!("吴".len(), 3);  //3 bytes UTF8
+    assert_eq!("吴".chars().count(), 1);
+
+    // 25.4  modify
+    // impossible to modify a &str
+    // let mut s1 = "hello"
+    // s1[0] = 'C'; // error: cannot be mutably indexed by `{integer}`
+    let mut s1 = "hello".to_string();
+   
+    assert!(s1.get_mut(0..1).is_some());
+    assert_eq!(s1.get_mut(0..1).map(|v|&*v),Some("h"));
+    if let Some(s) = s1.get_mut(0..1) {
+        assert_eq!(s,"h");
+        s.make_ascii_uppercase();
+    }
+    
+    assert_eq!(s1,"Hello");
+
+    /*
+    let s1m: &mut str = &mut s1.to_string();
+    let me = unsafe { s1m.as_bytes_mut() }; 
+    me.make_ascii_uppercase();
+    println!("{:?}",me.iter().map(|x|*x as char).collect::<Vec<_>>()); 
+    */
+
+    let mut s2 = "hello".to_string();
+    s2.push('a');
+    println!("{}",s2);
+
+    // &str is very much like &[T]: a fat pointer to some data. 
+    // String is analogous to Vec<T>:
+    let s3 = "hello";
+    assert_eq!("olleh",s3.chars().rev().collect::<String>());
+
+    // The .to_string() method converts a &str to a String
+    let err_msg = "unknown input type".to_string();
+    assert_eq!("type input unknown",
+       err_msg.split_whitespace().rev().map(|s| s.to_owned()+" ").collect::<String>().trim());
+
+    // The format!() macro returns a new formatted String
+    assert_eq!(format!("{}°{:02}′{:02}″N", 24, 5, 23), 
+        "24°05′23″N".to_string());
+    
+    //
+    let bits = vec!["veni", "vidi", "vici"];
+    assert_eq!(bits.concat(), "venividivici");
+    assert_eq!(bits.join(", "), "veni, vidi, vici");
+
+    assert!("ONE".to_lowercase() == "one");
+    assert!("peanut".contains("nut"));
+    assert_eq!("🗻∈🌏".replace("🗻", "🍔"), "🍔∈🌏");
+
 
 }
+
+fn new_pixel_buffer(rows: usize, cols: usize) -> Vec<u8> {
+    vec![0; rows * cols]
+}
+
+fn print(n: &[f64]) {
+    for elt in n {
+        print!("{:.3} ", elt);
+    }
+    println!()
+}
+
+
+
