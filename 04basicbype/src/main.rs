@@ -545,7 +545,7 @@ fn main() {
 
     let mut s2 = "hello".to_string();
     s2.push('a');
-    println!("{}",s2);
+    assert_eq!("helloa",s2);
 
     // &str is very much like &[T]: a fat pointer to some data.
     // String is analogous to Vec<T>:
@@ -561,16 +561,21 @@ fn main() {
     assert_eq!(format!("{}°{:02}′{:02}″N", 24, 5, 23),
         "24°05′23″N".to_string());
 
-    //
+    //  .concat() and .join(sep), that form a new String from many strings.
     let bits = vec!["veni", "vidi", "vici"];
     assert_eq!(bits.concat(), "venividivici");
     assert_eq!(bits.join(", "), "veni, vidi, vici");
 
+    // == & != in string
     assert!("ONE".to_lowercase() == "one");
+
+    // contains, replace(), trim() starts_with()
     assert!("peanut".contains("nut"));
     assert_eq!("🗻∈🌏".replace("🗻", "🍔"), "🍔∈🌏");
-
-
+    assert_eq!("    clean\n".trim(), "clean");
+    for word in "veni, vidi, vici".split(", ") {
+        assert!(word.starts_with("v"));
+    }
 }
 
 fn new_pixel_buffer(rows: usize, cols: usize) -> Vec<u8> {
