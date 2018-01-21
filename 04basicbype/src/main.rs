@@ -493,14 +493,14 @@ fn main() {
     // ------------------------------------------------------------
     // |*|4|4|       |*|3|                       |*|2|
     // -|-------------|---------------------------|----------------  stack
-    //  |             |                          (3) 
+    //  |             |                          (3)
     //  +-(1)-+ +-(2)-+                 ----------|----------------  read-only memory
     //        | |                                |W|U|
     //        | |                       ---------------------------  preallocated
     // -------|-|-------------  heap
     //       |a|l|e|x|
     // -----------------------
-    // 
+    //
     // (1) String is a Vec<u8>
     // (2) &str (“string slice”) is a reference to str owned by someone else
     // (3) string literal is a &str that refers to preallocated text,
@@ -526,28 +526,28 @@ fn main() {
     // let mut s1 = "hello"
     // s1[0] = 'C'; // error: cannot be mutably indexed by `{integer}`
     let mut s1 = "hello".to_string();
-   
+
     assert!(s1.get_mut(0..1).is_some());
     assert_eq!(s1.get_mut(0..1).map(|v|&*v),Some("h"));
     if let Some(s) = s1.get_mut(0..1) {
         assert_eq!(s,"h");
         s.make_ascii_uppercase();
     }
-    
+
     assert_eq!(s1,"Hello");
 
     /*
     let s1m: &mut str = &mut s1.to_string();
-    let me = unsafe { s1m.as_bytes_mut() }; 
+    let me = unsafe { s1m.as_bytes_mut() };
     me.make_ascii_uppercase();
-    println!("{:?}",me.iter().map(|x|*x as char).collect::<Vec<_>>()); 
+    println!("{:?}",me.iter().map(|x|*x as char).collect::<Vec<_>>());
     */
 
     let mut s2 = "hello".to_string();
     s2.push('a');
     println!("{}",s2);
 
-    // &str is very much like &[T]: a fat pointer to some data. 
+    // &str is very much like &[T]: a fat pointer to some data.
     // String is analogous to Vec<T>:
     let s3 = "hello";
     assert_eq!("olleh",s3.chars().rev().collect::<String>());
@@ -558,9 +558,9 @@ fn main() {
        err_msg.split_whitespace().rev().map(|s| s.to_owned()+" ").collect::<String>().trim());
 
     // The format!() macro returns a new formatted String
-    assert_eq!(format!("{}°{:02}′{:02}″N", 24, 5, 23), 
+    assert_eq!(format!("{}°{:02}′{:02}″N", 24, 5, 23),
         "24°05′23″N".to_string());
-    
+
     //
     let bits = vec!["veni", "vidi", "vici"];
     assert_eq!(bits.concat(), "venividivici");
